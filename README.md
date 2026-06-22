@@ -1,4 +1,4 @@
-Purchase Transaction & Currency Conversion Service
+PURCHASE TRANSACTION & CURRENCY CONVERSION SERVICE APPLICATION
 
 This is a Spring Boot REST API built with Java 21 that stores purchase 
 transactions in USD and retrieves them converted into target foreign currencies 
@@ -105,3 +105,54 @@ Sample Boundary Failure Response:
       "status": 400,
       "error": "The purchase cannot be converted to the target currency. No conversion rate available within 6 months prior to the purchase date."
     }
+
+-------------------------------------------------------------------------------
+5. ARCHITECTURE & PERSISTENCE NOTES
+-------------------------------------------------------------------------------
+
+* H2 In-Memory Console:
+  When running the application locally, you can visually inspect the database 
+  schema and stored records by visiting:
+  
+  URL: http://localhost:8080/h2-console
+  JDBC URL: jdbc:h2:mem:purchasedb
+
+* Transaction Isolation:
+  Database mutations are protected by Spring's @Transactional abstraction, 
+  ensuring that partial execution failures trigger an immediate rollback 
+  to maintain data consistency.
+
+-------------------------------------------------------------------------------
+6. AUTOMATED TESTING STRATEGY
+-------------------------------------------------------------------------------
+
+The application includes a test suite that ensures adherence to financial and 
+logical constraints without depending on active external services.
+
+* Integration Testing (WireMock):
+  The integration test layer boots a localized web server context on an 
+  ephemeral random port. It leverages WireMock to mock precise JSON payloads 
+  matching the U.S. Fiscal Data API structure. This guarantees that test execution 
+  is deterministic, resilient, and network-isolated.
+
+* Unit Testing:
+  Covers core business logic validation boundaries, verifying that edge-case 
+  inputs (exactly 6 months out, fractional pennies, boundary string lengths) 
+  fail correctly or round identically to financial regulations.
+
+-------------------------------------------------------------------------------
+7. PRODUCTION CONSIDERATIONS (NEXT STEPS)
+-------------------------------------------------------------------------------
+
+If deploying this application to a live production environment, the following 
+architectural enhancements would be introduced:
+
+1. Externalized Database: Swap the in-memory H2 driver for a production-grade 
+   relational database (such as PostgreSQL) via Spring Profiles.
+2. API Caching: Since U.S. Treasury exchange rates are updated periodically, 
+   integrating caching onto the TreasuryApiClient layer would prevent unnecessary 
+   remote network overhead and protect against rate-limiting.
+3. Resilience & Fault Tolerance: Introduce a Circuit Breaker pattern (using 
+   Resilience4j) around the external API call to handle slow responses or 
+   transient downtime from the federal endpoint gracefully.
+
